@@ -11,8 +11,9 @@ int trig=4;
 int echo=5;
 int water_lev;
 boolean IsFull;
-int water_lev_interrupt=27;
 String Mode="";
+
+WidgetLED pump_led(V7);
 
 BlynkTimer timer;
 // You should get Auth Token in the Blynk App.
@@ -27,6 +28,10 @@ char auth[] = "zTVdMzg45Af4ofhIkMIKCHKJyu2HIm4U";
 char ssid[] = "GEORGE";      //enter your wifi network name
 char pass[] = "robot_freek1914";  // enter your wifi password
 
+BLYNK_CONNECTED() {
+  // Request Blynk server to re-send latest values for all pins
+  Blynk.syncAll();
+}
 
 void myTimerEvent()
 {
@@ -35,21 +40,27 @@ void myTimerEvent()
   Blynk.virtualWrite(V5, millis() / 1000);
 }
 
-void Mode_set(){  // function to turn of pump if automatic mode is selected
+void Mode_set(){  // function to control pump if automatic mode is selected
   
   if(Mode=="auto"){
 
     if(IsFull==true){
     
     digitalWrite(Pump_switch,LOW);
-    Serial.println("pump off");
+    pump_led.off();
+    //Serial.println("pump off");
     }
   else if(IsFull==false){
     
     digitalWrite(Pump_switch,HIGH);
-    Serial.println("pump on");
+    pump_led.on();
+    //Serial.println("pump on");
     }
   }
+  else if(Mode=="manual"){
+    
+    Blynk.syncVirtual(V1);
+    }
   }
 
 void setup()
@@ -61,7 +72,7 @@ void setup()
   //Blynk.begin(auth, ssid, pass);
 
   pinMode(Pump_switch, OUTPUT);
-  pinMode(water_lev_interrupt,OUTPUT);
+
   pinMode(trig,OUTPUT);
   
   pinMode(echo,INPUT);
@@ -73,17 +84,12 @@ void setup()
   Blynk.notify("there is power!");
   //Blynk.begin(auth, ssid, pass, IPAddress(192,168,1,100), 8080);
 
-  if(calculat_water_level()>=100){
 
-    IsFull=true;
-    digitalWrite(Pump_switch,LOW);
-    }
-   else{
-    
-    IsFull=false;
-    digitalWrite(Pump_switch,HIGH);
-    }
+// on start up, this starts up the pump if the water level is low.
+
+  
 }
+
 
 void loop()
 {
@@ -91,6 +97,7 @@ void loop()
   timer.run();
   water_level();
   Mode_set();
+  
 }
 
 
@@ -98,14 +105,15 @@ BLYNK_WRITE(V1) // Button Widget writes to Virtual Pin V1(pump virtual pin)
 
 {
   int pinValue1 = param.asInt();
-
     if(pinValue1 == 1) {     // if Button sends 1(when button is pressed)
       digitalWrite(Pump_switch, HIGH);             // switches on the pump
+      pump_led.on();
     }
     else
     
     { 
       digitalWrite(Pump_switch, LOW);             // switches off the pump
+      pump_led.off();
     }
 
   }
@@ -113,19 +121,19 @@ BLYNK_WRITE(V1) // Button Widget writes to Virtual Pin V1(pump virtual pin)
 
 
   
-BLYNK_WRITE(V6) // Button Widget writes to Virtual Pin V6(Auto/manual pump control) 
+BLYNK_WRITE(V6) // segmented switch Widget writes to Virtual Pin V6(Auto/manual pump control) 
 {
   int pinValue2 = param.asInt();
 
   if(pinValue2 == 1) {     // if Button sends 1(when button is pressed)
-    Serial.println("auto");
+    //Serial.println("auto");
     Mode="auto";
     //digitalWrite(Pump_switch, HIGH);             // switches on the pump
   }
   else
   
   { 
-    Serial.println("manual");
+    //Serial.println("manual");
     Mode="manual";
     //digitalWrite(Pump_switch, LOW);             // switches off the pump
   }
@@ -137,12 +145,12 @@ void water_level(){
         
       water_lev=calculat_water_level();
 
-      Serial.println(water_lev);  //uncoment to get the value of the distance on the serial monitor  
+      //Serial.println(water_lev);  //uncoment to get the value of the distance on the serial monitor  
       
       water_lev=map(water_lev,21,5,0,100); //maps the higher value(meaning no water in the tank)reading of the ultrasonic range sensor to 0 
                                             //and maps the lower value(meaning tank is full) to the higher value
-      Serial.println("this is the mapped level: ");
-      Serial.println(water_lev);
+      //Serial.println("this is the mapped level: ");
+      //Serial.println(water_lev);
       if (water_lev<100){
         
         Blynk.virtualWrite(V2, water_lev);  // pushes the vlevel of water to the level indicator on the app
@@ -153,8 +161,8 @@ void water_level(){
         
         // the Blynk.virtualWrite(V2, water_lev) is not added here so that the level indicator value on blynk does not keep increasing
         IsFull=true;
+        Blynk.notify("water is full");  // pushes a notification when the tank is full
         
-        Blynk.notify("water is full");  // pushes a notification when the tank is over 50% full
         }
       
       
