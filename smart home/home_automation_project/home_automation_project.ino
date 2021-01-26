@@ -22,15 +22,15 @@ WidgetLED pump_led(V7);
 BlynkTimer timer;
 // You should get Auth Token in the Blynk App.
 // Go to the Project Settings (nut icon).
-char auth[] = "zTVdMzg45Af4ofhIkMIKCHKJyu2HIm4U";
+char auth[] = "put your auth here";
 
 
 
 
 // Your WiFi credentials.
 // Set password to "" for open networks.
-char ssid[] = "S-TEE ICT";  //    "GEORGE";  //enter your wifi network name
-char pass[] = "12341234";  //"robot_freek1914"; // enter your wifi password
+char ssid[] = "your wifi name";  
+char pass[] = "your wifi password";
 
 BLYNK_CONNECTED() {
   // Request Blynk server to re-send latest values for all pins
